@@ -1,0 +1,35 @@
+-- Calculate total sales for each product subcategory from 1998 to 2001
+WITH SubcategorySales AS (
+    SELECT
+        prod_subcategory,
+        EXTRACT(YEAR FROM order_date) AS sales_year,
+        SUM(sales_amount) AS total_sales
+    FROM
+        sh.backup.sales
+    WHERE
+        EXTRACT(YEAR FROM order_date) BETWEEN 1998 AND 2001
+    GROUP BY
+        prod_subcategory, sales_year
+),
+-- Calculate total sales for each product subcategory for the previous year (1997 to 2000)
+PreviousYearSales AS (
+    SELECT
+        prod_subcategory,
+        EXTRACT(YEAR FROM order_date) AS prev_year,
+        SUM(sales_amount) AS prev_year_sales
+    FROM
+        sh.backup.sales
+    WHERE
+        EXTRACT(YEAR FROM order_date) BETWEEN 1997 AND 2000
+    GROUP BY
+        prod_subcategory, prev_year
+)
+-- Identify subcategories with consistently higher sales from 1998 to 2001 compared to the previous year
+SELECT DISTINCT
+    s.prod_subcategory
+FROM
+    SubcategorySales s
+JOIN
+    PreviousYearSales p ON s.prod_subcategory = p.prod_subcategory AND s.sales_year = p.prev_year
+WHERE
+    s.total_sales > p.prev_year_sales;
